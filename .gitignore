@@ -1,24 +1,50 @@
-# Logs
-logs
-*.log
+# === Node / Frontend ===
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# === .NET / C# Backend ===
+[Bb]in/
+[Oo]bj/
+out/
+appsettings.Local.json
+*.user
+*.userosscache
+*.sln.docstates
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# === User Secrets & Local Configs ===
+usersecrets/
+secrets.json
+
+# === OS & System Files ===
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# === Editor & IDEs ===
+.idea/
+.vscode/
+!.vscode/extensions.json
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?
+*.bak
+*.tmp
+*.sql
+*.db
