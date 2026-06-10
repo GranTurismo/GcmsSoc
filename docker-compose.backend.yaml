@@ -1,0 +1,15 @@
+services:
+  backend:
+    image: granturismo565/beeqaa:latest
+    container_name: gcms_soc_backend
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=gcms_sql;Database=GcmsSocDb;User Id=sa;Password=Beeqaa997!;TrustServerCertificate=True;MultipleActiveResultSets=True;
+    ports:
+      - "5000:80"
+    restart: always
+    networks:
+      - nginxnetwork
+
+networks:
+  nginxnetwork:
+    external: true

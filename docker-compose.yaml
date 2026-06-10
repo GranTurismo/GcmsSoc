@@ -1,0 +1,13 @@
+services:
+  frontend:
+    image: granturismo565/beeqaa_front:latest
+    container_name: gcms_soc_frontend
+    ports:
+      - "8081:80"
+    restart: always
+    networks:
+      - nginxnetwork
+
+networks:
+  nginxnetwork:
+    external: true
