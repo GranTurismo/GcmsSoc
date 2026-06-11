@@ -136,6 +136,7 @@ interface DBContextType {
   addPhoto: (url: string, caption: string, author: string) => void;
   likePhoto: (photoId: string, username: string) => void;
   addPhotoComment: (photoId: string, username: string, avatar: string, text: string) => void;
+  fetchData: () => Promise<void>;
 }
 
 const API_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
@@ -612,7 +613,8 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       
       addPhoto,
       likePhoto,
-      addPhotoComment
+      addPhotoComment,
+      fetchData
     }}>
       {children}
     </DBContext.Provider>

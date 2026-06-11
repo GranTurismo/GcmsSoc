@@ -21,7 +21,7 @@ interface AdminStats {
 export const AdminPanelView: React.FC = () => {
   const { currentUser, allUsers, fetchUsers } = useAuth();
   const { 
-    news, forumCategories, chatRooms, files, diaries, photos 
+    news, forumCategories, chatRooms, files, diaries, photos, fetchData 
   } = useDB();
   const { navigate, goBack } = useNav();
 
@@ -185,7 +185,7 @@ export const AdminPanelView: React.FC = () => {
         setNewsTitle('');
         setNewsContent('');
         setEditingNewsId(null);
-        window.location.reload(); // Refresh the DBContext database state
+        await fetchData();
       } else {
         showError('ოპერაცია ჩაიშალა.');
       }
@@ -204,7 +204,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('სიახლე წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -221,7 +221,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('კომენტარი წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -239,7 +239,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('თემა წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -256,7 +256,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('პოსტი წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -281,7 +281,7 @@ export const AdminPanelView: React.FC = () => {
         showSuccess('ჩეთ ოთახი დაემატა!');
         setChatRoomTitle('');
         setChatRoomDesc('');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -298,7 +298,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('ჩეთ ოთახი წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -315,7 +315,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('მესიჯი წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -333,7 +333,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('ფაილი წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -350,7 +350,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('კომენტარი წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -368,7 +368,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('დღიური წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -385,7 +385,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('კომენტარი წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -403,7 +403,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('სურათი წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
@@ -420,7 +420,7 @@ export const AdminPanelView: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('კომენტარი წაიშალა.');
-        window.location.reload();
+        await fetchData();
       }
     } catch (err) {
       showError('შეცდომა.');
