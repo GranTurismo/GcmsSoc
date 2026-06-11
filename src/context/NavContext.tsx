@@ -16,7 +16,14 @@ interface NavContextType {
 const NavContext = createContext<NavContextType | undefined>(undefined);
 
 export const NavProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [history, setHistory] = useState<ScreenState[]>([{ page: 'home' }]);
+  const [history, setHistory] = useState<ScreenState[]>(() => {
+    const saved = sessionStorage.getItem('dcms_nav_history');
+    return saved ? JSON.parse(saved) : [{ page: 'home' }];
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem('dcms_nav_history', JSON.stringify(history));
+  }, [history]);
 
   const current = history[history.length - 1] || { page: 'home' };
 
