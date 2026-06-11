@@ -452,14 +452,14 @@ export const AdminPanelView: React.FC = () => {
 
       {/* Success/Error Alerts */}
       {successMsg && (
-        <div className="flex items-center gap-2 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm animate-fade-in">
-          <Check size={16} />
+        <div className="liquid-alert-success p-5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2.5 max-w-md mx-auto my-3">
+          <Check className="w-5 h-5 animate-bounce" />
           <span>{successMsg}</span>
         </div>
       )}
       {errorMsg && (
-        <div className="flex items-center gap-2 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm animate-fade-in">
-          <AlertCircle size={16} />
+        <div className="liquid-alert-error p-5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2.5 max-w-md mx-auto my-3">
+          <AlertCircle className="w-5 h-5 animate-bounce" />
           <span>{errorMsg}</span>
         </div>
       )}
