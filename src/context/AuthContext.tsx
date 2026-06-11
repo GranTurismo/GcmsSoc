@@ -86,7 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         freshUser.rating !== currentUser.rating || 
         freshUser.bio !== currentUser.bio || 
         freshUser.status !== currentUser.status || 
-        freshUser.avatar !== currentUser.avatar
+        freshUser.avatar !== currentUser.avatar ||
+        freshUser.role !== currentUser.role
       )) {
         setCurrentUser(freshUser);
       }
