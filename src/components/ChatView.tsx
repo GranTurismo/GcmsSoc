@@ -133,7 +133,7 @@ export const ChatRoomView: React.FC = () => {
           <span>უკან</span>
         </button>
         <span className="text-[11px] text-gray-500 font-medium bg-violet-950/20 px-2.5 py-1 rounded-full border border-violet-500/5">
-          საუბრობს: {Math.floor(2 + Math.random() * 4)} წევრი
+          საუბრობს: {new Set(room.messages.map(m => m.username)).size || 1} წევრი
         </span>
       </div>
 

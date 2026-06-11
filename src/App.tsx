@@ -18,6 +18,7 @@ import { LeadersView } from './components/LeadersView';
 import { OnlineUsersListView, ProfileView } from './components/OnlineView';
 import { LibraryListView, LibraryDetailView } from './components/LibraryView';
 import { AdminPanelView } from './components/AdminPanelView';
+import { MailView } from './components/MailView';
 
 // Home Specific Icons
 import { 
@@ -127,6 +128,8 @@ const AppContent: React.FC = () => {
         return <AdminPanelView />;
       case 'login':
         return <LoginView />;
+      case 'inbox':
+        return <MailView />;
       case 'register':
         return <RegisterView />;
       default:

@@ -144,7 +144,7 @@ const API_URL = `${window.location.protocol}//${window.location.hostname}:5000/a
 const DBContext = createContext<DBContextType | undefined>(undefined);
 
 export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { fetchUsers } = useAuth();
+  const { fetchUsers, fetchPrivateMessages, fetchUnreadMailCount } = useAuth();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [forumCategories, setForumCategories] = useState<ForumCategory[]>([]);
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
@@ -281,6 +281,11 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         }
         return [message, ...prevGuestbook]; // Guestbook is descending order
       });
+    });
+
+    connection.on("ReceivePrivateMessage", () => {
+      fetchPrivateMessages();
+      fetchUnreadMailCount();
     });
 
     connection.start()

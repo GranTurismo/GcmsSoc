@@ -38,6 +38,25 @@ namespace GcmsSoc.API.Data
                         ALTER TABLE [dbo].[Users] ADD [PasswordHash] NVARCHAR(MAX) NOT NULL DEFAULT '';
                     END
                 ");
+
+                // 3. Ensure PrivateMessages table exists
+                context.Database.ExecuteSqlRaw(@"
+                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'PrivateMessages')
+                    BEGIN
+                        CREATE TABLE [dbo].[PrivateMessages] (
+                            [Id] NVARCHAR(450) NOT NULL PRIMARY KEY,
+                            [SenderId] NVARCHAR(MAX) NOT NULL,
+                            [SenderUsername] NVARCHAR(MAX) NOT NULL,
+                            [SenderAvatar] NVARCHAR(MAX) NOT NULL,
+                            [RecipientId] NVARCHAR(MAX) NOT NULL,
+                            [RecipientUsername] NVARCHAR(MAX) NOT NULL,
+                            [Text] NVARCHAR(MAX) NOT NULL,
+                            [Date] NVARCHAR(MAX) NOT NULL,
+                            [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                            [IsRead] BIT NOT NULL DEFAULT 0
+                        );
+                    END
+                ");
             }
             catch (Exception ex)
             {

@@ -24,6 +24,7 @@ namespace GcmsSoc.API.Data
         public DbSet<PhotoLike> PhotoLikes => Set<PhotoLike>();
         public DbSet<PhotoComment> PhotoComments => Set<PhotoComment>();
         public DbSet<LibraryArticle> Library => Set<LibraryArticle>();
+        public DbSet<PrivateMessage> PrivateMessages => Set<PrivateMessage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

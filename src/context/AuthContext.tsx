@@ -17,6 +17,19 @@ export interface User {
   bio?: string;
 }
 
+export interface PrivateMessage {
+  id: string;
+  senderId: string;
+  senderUsername: string;
+  senderAvatar: string;
+  recipientId: string;
+  recipientUsername: string;
+  text: string;
+  date: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 interface AuthContextType {
   currentUser: User | null;
   allUsers: User[];
@@ -30,6 +43,11 @@ interface AuthContextType {
   unreadMailCount: number;
   clearUnreadMail: () => void;
   fetchUsers: () => Promise<void>;
+  privateMessages: PrivateMessage[];
+  sendPrivateMessage: (recipientId: string, text: string) => Promise<boolean>;
+  markMessagesAsRead: (senderId: string) => Promise<void>;
+  fetchPrivateMessages: () => Promise<void>;
+  fetchUnreadMailCount: () => Promise<void>;
 }
 
 const API_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
@@ -43,7 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [unreadMailCount, setUnreadMailCount] = useState<number>(3);
+  const [unreadMailCount, setUnreadMailCount] = useState<number>(0);
+  const [privateMessages, setPrivateMessages] = useState<PrivateMessage[]>([]);
 
   // 1. Fetch all users from C# Web API
   const fetchUsers = async () => {
@@ -239,6 +258,97 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return false;
   };
 
+  const fetchPrivateMessages = async () => {
+    if (!currentUser) {
+      setPrivateMessages([]);
+      return;
+    }
+    try {
+      const token = localStorage.getItem('dcms_auth_token');
+      const res = await fetch(`${API_URL}/portal/messages`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPrivateMessages(data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching private messages:', err);
+    }
+  };
+
+  const fetchUnreadMailCount = async () => {
+    if (!currentUser) {
+      setUnreadMailCount(0);
+      return;
+    }
+    try {
+      const token = localStorage.getItem('dcms_auth_token');
+      const res = await fetch(`${API_URL}/portal/messages/unread-count`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadMailCount(Number(data));
+      }
+    } catch (err) {
+      console.error('Error fetching unread count:', err);
+    }
+  };
+
+  const sendPrivateMessage = async (recipientId: string, text: string): Promise<boolean> => {
+    if (!currentUser) return false;
+    try {
+      const token = localStorage.getItem('dcms_auth_token');
+      const res = await fetch(`${API_URL}/portal/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ recipientId, text })
+      });
+      if (res.ok) {
+        const newMsg = await res.json();
+        setPrivateMessages(prev => {
+          if (prev.some(m => m.id === newMsg.id)) return prev;
+          return [...prev, newMsg];
+        });
+        return true;
+      }
+    } catch (err) {
+      console.error('Error sending private message:', err);
+    }
+    return false;
+  };
+
+  const markMessagesAsRead = async (senderId: string) => {
+    if (!currentUser) return;
+    try {
+      const token = localStorage.getItem('dcms_auth_token');
+      const res = await fetch(`${API_URL}/portal/messages/read/${senderId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setPrivateMessages(prev => prev.map(m => m.senderId === senderId && m.recipientId === currentUser.id ? { ...m, isRead: true } : m));
+        await fetchUnreadMailCount();
+      }
+    } catch (err) {
+      console.error('Error marking messages as read:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchPrivateMessages();
+      fetchUnreadMailCount();
+    } else {
+      setPrivateMessages([]);
+      setUnreadMailCount(0);
+    }
+  }, [currentUser]);
+
   const clearUnreadMail = () => {
     setUnreadMailCount(0);
   };
@@ -256,7 +366,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       giveGift,
       unreadMailCount,
       clearUnreadMail,
-      fetchUsers
+      fetchUsers,
+      privateMessages,
+      sendPrivateMessage,
+      markMessagesAsRead,
+      fetchPrivateMessages,
+      fetchUnreadMailCount
     }}>
       {children}
     </AuthContext.Provider>

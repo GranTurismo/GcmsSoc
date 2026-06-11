@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNav } from '../context/NavContext';
+import { useAuth } from '../context/AuthContext';
+import { useDB } from '../context/DBContext';
 import { Flame } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const { navigate } = useNav();
+  const { allUsers } = useAuth();
+  const { news, forumCategories, library } = useDB();
   const [stats, setStats] = useState({
     time: 0.024,
     queries: 4,
@@ -17,6 +21,20 @@ export const Footer: React.FC = () => {
       memory: parseFloat((1.05 + Math.random() * 0.2).toFixed(2))
     });
   }, [window.location.hash]);
+
+  const totalNewsViews = news.reduce((sum, item) => sum + (item.views || 0), 0);
+  const totalTopicViews = forumCategories.reduce((sum, cat) => sum + (cat.topics || []).reduce((tSum, t) => tSum + (t.views || 0), 0), 0);
+  const totalLibraryViews = library.reduce((sum, item) => sum + (item.views || 0), 0);
+  const totalViews = totalNewsViews + totalTopicViews + totalLibraryViews;
+
+  const totalRating = allUsers.reduce((sum, u) => sum + (u.rating || 0), 0);
+
+  const totalPosts = forumCategories.reduce((sum, cat) => sum + (cat.topics || []).reduce((tSum, t) => tSum + (t.posts || []).length, 0), 0);
+  const indexCY = Math.round(10 + (totalPosts * 0.5) + (allUsers.length * 0.2));
+
+  const formatBadgeValue = (val: number) => {
+    return val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val.toString();
+  };
 
   return (
     <footer className="glass-panel border-t border-violet-500/20 p-6 rounded-b-2xl flex flex-col items-center gap-5 text-center mt-auto">
@@ -33,13 +51,13 @@ export const Footer: React.FC = () => {
       <div className="flex gap-3 justify-center flex-wrap">
         <div className="bg-[#050308] border border-violet-500/20 rounded px-2.5 py-1 text-[10px] font-bold text-green-400 shadow-[0_0_8px_rgba(16,185,129,0.2)] flex items-center gap-1">
           <Flame size={10} className="animate-pulse" />
-          <span>რამბლერი [4.2k]</span>
+          <span>რამბლერი [{formatBadgeValue(totalViews)}]</span>
         </div>
         <div className="bg-[#050308] border border-violet-500/20 rounded px-2.5 py-1 text-[10px] font-bold text-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.2)]">
-          <span>რეიტინგი [9.8k]</span>
+          <span>რეიტინგი [{formatBadgeValue(totalRating)}]</span>
         </div>
         <div className="bg-[#050308] border border-violet-500/20 rounded px-2.5 py-1 text-[10px] font-bold text-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.2)]">
-          <span>ინდექსი [CY 70]</span>
+          <span>ინდექსი [CY {indexCY}]</span>
         </div>
       </div>
 

@@ -73,7 +73,7 @@ export const OnlineUsersListView: React.FC = () => {
 export const ProfileView: React.FC = () => {
   const { 
     currentUser, allUsers, updateStatus, updateAvatar, 
-    updateBio, giveGift 
+    updateBio, giveGift, sendPrivateMessage 
   } = useAuth();
   
   const { params, navigate, goBack } = useNav();
@@ -142,15 +142,18 @@ export const ProfileView: React.FC = () => {
     }
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageText.trim()) return;
-    setSentSuccess(true);
-    setMessageText('');
-    setTimeout(() => {
-      setSentSuccess(false);
-      setActiveMessageUser(null);
-    }, 2000);
+    if (!messageText.trim() || !activeMessageUser) return;
+    const success = await sendPrivateMessage(activeMessageUser.id, messageText.trim());
+    if (success) {
+      setSentSuccess(true);
+      setMessageText('');
+      setTimeout(() => {
+        setSentSuccess(false);
+        setActiveMessageUser(null);
+      }, 2000);
+    }
   };
 
   return (

@@ -5,7 +5,7 @@ import { useNav } from '../context/NavContext';
 import { Heart, ChevronLeft, Search, Mail, Send, Check } from 'lucide-react';
 
 export const DatingView: React.FC = () => {
-  const { allUsers, currentUser } = useAuth();
+  const { allUsers, currentUser, sendPrivateMessage } = useAuth();
   const { navigate, goBack } = useNav();
   
   const [searchSex, setSearchSex] = useState<'Male' | 'Female'>('Female');
@@ -38,16 +38,19 @@ export const DatingView: React.FC = () => {
     setSearched(true);
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageText.trim()) return;
+    if (!messageText.trim() || !activeMessageUser) return;
     
-    setSentSuccess(true);
-    setMessageText('');
-    setTimeout(() => {
-      setSentSuccess(false);
-      setActiveMessageUser(null);
-    }, 2000);
+    const success = await sendPrivateMessage(activeMessageUser.id, messageText.trim());
+    if (success) {
+      setSentSuccess(true);
+      setMessageText('');
+      setTimeout(() => {
+        setSentSuccess(false);
+        setActiveMessageUser(null);
+      }, 2000);
+    }
   };
 
   return (

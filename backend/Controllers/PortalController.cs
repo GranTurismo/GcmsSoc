@@ -568,5 +568,92 @@ namespace GcmsSoc.API.Controllers
             await _context.SaveChangesAsync();
             return Ok();
         }
+
+        public class SendMessageRequest
+        {
+            public string RecipientId { get; set; } = string.Empty;
+            public string Text { get; set; } = string.Empty;
+        }
+
+        [HttpGet("messages")]
+        [Authorize]
+        public async Task<IActionResult> GetPrivateMessages()
+        {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
+            var messages = await _context.PrivateMessages
+                .Where(m => m.SenderId == user.Id || m.RecipientId == user.Id)
+                .OrderBy(m => m.CreatedAt)
+                .ToListAsync();
+
+            return Ok(messages);
+        }
+
+        [HttpGet("messages/unread-count")]
+        [Authorize]
+        public async Task<IActionResult> GetUnreadMessagesCount()
+        {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
+            var count = await _context.PrivateMessages
+                .CountAsync(m => m.RecipientId == user.Id && !m.IsRead);
+
+            return Ok(count);
+        }
+
+        [HttpPost("messages")]
+        [Authorize]
+        public async Task<IActionResult> SendPrivateMessage([FromBody] SendMessageRequest request)
+        {
+            var sender = await GetAuthenticatedUserAsync();
+            if (sender == null) return Unauthorized();
+
+            var recipient = await _context.Users.FindAsync(request.RecipientId);
+            if (recipient == null) return NotFound("Recipient not found");
+
+            var newMsg = new PrivateMessage
+            {
+                Id = Guid.NewGuid().ToString(),
+                SenderId = sender.Id,
+                SenderUsername = sender.Username,
+                SenderAvatar = sender.Avatar,
+                RecipientId = recipient.Id,
+                RecipientUsername = recipient.Username,
+                Text = request.Text,
+                Date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm"),
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            };
+
+            _context.PrivateMessages.Add(newMsg);
+            await _context.SaveChangesAsync();
+
+            // Broadcast the new private message to all clients connected to the hub
+            await _hubContext.Clients.All.SendAsync("ReceivePrivateMessage", newMsg);
+
+            return Ok(newMsg);
+        }
+
+        [HttpPost("messages/read/{senderId}")]
+        [Authorize]
+        public async Task<IActionResult> MarkMessagesAsRead(string senderId)
+        {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
+            var unreadMsgs = await _context.PrivateMessages
+                .Where(m => m.RecipientId == user.Id && m.SenderId == senderId && !m.IsRead)
+                .ToListAsync();
+
+            foreach (var m in unreadMsgs)
+            {
+                m.IsRead = true;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
     }
 }

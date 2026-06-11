@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const { currentUser, logout, unreadMailCount } = useAuth();
+  const { currentUser, logout, unreadMailCount, allUsers } = useAuth();
   const { navigate } = useNav();
   const { forumCategories } = useDB();
 
@@ -59,7 +59,7 @@ export const Header: React.FC = () => {
           onClick={() => navigate('online')}
         >
           <Users size={12} className="text-violet-400" />
-          <span>აქტიური: 4 / 28</span>
+          <span>აქტიური: {allUsers.filter(u => u.isOnline).length} / {allUsers.length}</span>
         </div>
         <div className="bg-violet-950/20 px-3 py-1.5 rounded-full border border-violet-500/10">
           <span>თემები: {totalTopics}</span>
@@ -117,7 +117,7 @@ export const Header: React.FC = () => {
             
             <span 
               className="flex items-center gap-1.5 text-violet-300 hover:text-violet-100 cursor-pointer relative transition-colors" 
-              onClick={() => navigate('chat_home')}
+              onClick={() => navigate('inbox')}
             >
               <Mail size={15} />
               <span>ფოსტა</span>
