@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { HubConnectionBuilder } from '@microsoft/signalr';
+import { useAuth } from './AuthContext';
 
 // Structs
 
@@ -142,6 +143,7 @@ const API_URL = `${window.location.protocol}//${window.location.hostname}:5000/a
 const DBContext = createContext<DBContextType | undefined>(undefined);
 
 export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { fetchUsers } = useAuth();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [forumCategories, setForumCategories] = useState<ForumCategory[]>([]);
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
@@ -246,7 +248,9 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     // Establish SignalR hub connection
     const HUB_URL = `${window.location.protocol}//${window.location.hostname}:5000/hub/chat`;
     const connection = new HubConnectionBuilder()
-      .withUrl(HUB_URL)
+      .withUrl(HUB_URL, {
+        accessTokenFactory: () => localStorage.getItem('dcms_auth_token') || ""
+      })
       .withAutomaticReconnect()
       .build();
 
@@ -291,12 +295,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const addNewsComment = async (newsId: string, username: string, avatar: string, text: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/news/${newsId}/comment`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ username, avatar, text })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error adding news comment:', err);
     }
@@ -313,12 +324,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const addForumTopic = async (categoryId: string, title: string, username: string, avatar: string, text: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/forum/${categoryId}/topic`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ title, username, avatar, text })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error adding forum topic:', err);
     }
@@ -326,12 +344,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const addForumPost = async (categoryId: string, topicId: string, username: string, avatar: string, text: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/forum/${categoryId}/topic/${topicId}/post`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ username, avatar, text })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error adding forum post:', err);
     }
@@ -339,9 +364,13 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const likeForumPost = async (categoryId: string, topicId: string, postId: string, username: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/forum/${categoryId}/topic/${topicId}/post/${postId}/like`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ username })
       });
       if (res.ok) await fetchData();
@@ -361,12 +390,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const addChatMessage = async (roomId: string, username: string, avatar: string, text: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/chat/${roomId}/message`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ username, avatar, text })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error sending chat message:', err);
     }
@@ -374,12 +410,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const addGuestbookPost = async (username: string, avatar: string, text: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/guestbook`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ username, avatar, text })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error adding guestbook post:', err);
     }
@@ -387,12 +430,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const uploadFile = async (name: string, category: string, size: string, description: string, author: string, screenshot?: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/files`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ name, category, size, description, author, screenshot })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error uploading file:', err);
     }
@@ -400,8 +450,15 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const downloadFile = async (fileId: string) => {
     try {
-      const res = await fetch(`${API_URL}/portal/files/${fileId}/download`, { method: 'POST' });
-      if (res.ok) await fetchData();
+      const token = localStorage.getItem('dcms_auth_token');
+      const res = await fetch(`${API_URL}/portal/files/${fileId}/download`, { 
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error registering file download:', err);
     }
@@ -409,12 +466,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const addFileComment = async (fileId: string, username: string, avatar: string, text: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/files/${fileId}/comment`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ username, avatar, text })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error adding file comment:', err);
     }
@@ -422,12 +486,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const addDiary = async (title: string, content: string, author: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/diaries`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ title, content, author })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error creating diary entry:', err);
     }
@@ -435,12 +506,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const addDiaryComment = async (diaryId: string, username: string, avatar: string, text: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/diaries/${diaryId}/comment`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ username, avatar, text })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error adding diary comment:', err);
     }
@@ -448,12 +526,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const addPhoto = async (url: string, caption: string, author: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/photos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ url, caption, author })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error publishing photo:', err);
     }
@@ -461,9 +546,13 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const likePhoto = async (photoId: string, username: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/photos/${photoId}/like`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ username })
       });
       if (res.ok) await fetchData();
@@ -474,12 +563,19 @@ export const DBProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const addPhotoComment = async (photoId: string, username: string, avatar: string, text: string) => {
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/portal/photos/${photoId}/comment`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ username, avatar, text })
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Error adding photo comment:', err);
     }

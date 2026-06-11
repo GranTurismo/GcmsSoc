@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Authorization;
 using GcmsSoc.API.Data;
 using GcmsSoc.API.Models;
 using GcmsSoc.API.Hubs;
@@ -18,6 +19,13 @@ namespace GcmsSoc.API.Controllers
         {
             _context = context;
             _hubContext = hubContext;
+        }
+
+        private async Task<User?> GetAuthenticatedUserAsync()
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username)) return null;
+            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 
         public class CommentRequest
@@ -79,8 +87,12 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("news/{id}/comment")]
+        [Authorize]
         public async Task<IActionResult> AddNewsComment(string id, [FromBody] CommentRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var newsItem = await _context.News.FindAsync(id);
             if (newsItem == null) return NotFound();
 
@@ -88,8 +100,8 @@ namespace GcmsSoc.API.Controllers
             {
                 Id = Guid.NewGuid().ToString(),
                 NewsItemId = id,
-                Username = request.Username,
-                Avatar = request.Avatar,
+                Username = user.Username,
+                Avatar = user.Avatar,
                 Text = request.Text,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm")
             };
@@ -122,8 +134,12 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("forum/{catId}/topic")]
+        [Authorize]
         public async Task<IActionResult> AddForumTopic(string catId, [FromBody] TopicRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var category = await _context.ForumCategories.FindAsync(catId);
             if (category == null) return NotFound();
 
@@ -133,7 +149,7 @@ namespace GcmsSoc.API.Controllers
                 Id = topicId,
                 ForumCategoryId = catId,
                 Title = request.Title,
-                Author = request.Username,
+                Author = user.Username,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd"),
                 Views = 0,
                 Posts = new List<ForumPost>
@@ -142,8 +158,8 @@ namespace GcmsSoc.API.Controllers
                     {
                         Id = Guid.NewGuid().ToString(),
                         ForumTopicId = topicId,
-                        Username = request.Username,
-                        Avatar = request.Avatar,
+                        Username = user.Username,
+                        Avatar = user.Avatar,
                         Text = request.Text,
                         Date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm")
                     }
@@ -151,13 +167,19 @@ namespace GcmsSoc.API.Controllers
             };
 
             _context.ForumTopics.Add(newTopic);
+            user.Coins += 10;
+            user.Rating += 1;
             await _context.SaveChangesAsync();
             return Ok(newTopic);
         }
 
         [HttpPost("forum/{catId}/topic/{topicId}/post")]
+        [Authorize]
         public async Task<IActionResult> AddForumPost(string catId, string topicId, [FromBody] PostRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var topic = await _context.ForumTopics.FindAsync(topicId);
             if (topic == null) return NotFound();
 
@@ -165,26 +187,31 @@ namespace GcmsSoc.API.Controllers
             {
                 Id = Guid.NewGuid().ToString(),
                 ForumTopicId = topicId,
-                Username = request.Username,
-                Avatar = request.Avatar,
+                Username = user.Username,
+                Avatar = user.Avatar,
                 Text = request.Text,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm")
             };
 
             _context.ForumPosts.Add(newPost);
+            user.Coins += 3;
             await _context.SaveChangesAsync();
             return Ok(newPost);
         }
 
         [HttpPost("forum/{catId}/topic/{topicId}/post/{postId}/like")]
+        [Authorize]
         public async Task<IActionResult> LikeForumPost(string catId, string topicId, string postId, [FromBody] LikeRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var post = await _context.ForumPosts
                 .Include(p => p.Likes)
                 .FirstOrDefaultAsync(p => p.Id == postId);
             if (post == null) return NotFound();
 
-            var existingLike = post.Likes.FirstOrDefault(l => l.Username == request.Username);
+            var existingLike = post.Likes.FirstOrDefault(l => l.Username == user.Username);
             if (existingLike != null)
             {
                 _context.ForumPostLikes.Remove(existingLike);
@@ -195,7 +222,7 @@ namespace GcmsSoc.API.Controllers
                 {
                     Id = Guid.NewGuid().ToString(),
                     ForumPostId = postId,
-                    Username = request.Username
+                    Username = user.Username
                 };
                 _context.ForumPostLikes.Add(newLike);
             }
@@ -232,8 +259,12 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("chat/{roomId}/message")]
+        [Authorize]
         public async Task<IActionResult> AddChatMessage(string roomId, [FromBody] CommentRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var room = await _context.ChatRooms.FindAsync(roomId);
             if (room == null) return NotFound();
 
@@ -241,8 +272,8 @@ namespace GcmsSoc.API.Controllers
             {
                 Id = Guid.NewGuid().ToString(),
                 ChatRoomId = roomId,
-                Username = request.Username,
-                Avatar = request.Avatar,
+                Username = user.Username,
+                Avatar = user.Avatar,
                 Text = request.Text,
                 Date = DateTime.UtcNow.ToString("HH:mm:ss"),
                 CreatedAt = DateTime.UtcNow
@@ -268,14 +299,18 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("guestbook")]
+        [Authorize]
         public async Task<IActionResult> AddGuestbookPost([FromBody] CommentRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var newMsg = new ChatMessage
             {
                 Id = Guid.NewGuid().ToString(),
                 ChatRoomId = null,
-                Username = request.Username,
-                Avatar = request.Avatar,
+                Username = user.Username,
+                Avatar = user.Avatar,
                 Text = request.Text,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm"),
                 CreatedAt = DateTime.UtcNow
@@ -300,8 +335,12 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("files")]
+        [Authorize]
         public async Task<IActionResult> UploadFile([FromBody] FileUploadRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var newFile = new FileItem
             {
                 Id = Guid.NewGuid().ToString(),
@@ -309,7 +348,7 @@ namespace GcmsSoc.API.Controllers
                 Category = request.Category,
                 Size = request.Size,
                 Description = request.Description,
-                Author = request.Author,
+                Author = user.Username,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd"),
                 Downloads = 0,
                 Likes = 0,
@@ -317,6 +356,8 @@ namespace GcmsSoc.API.Controllers
             };
 
             _context.Files.Add(newFile);
+            user.Coins += 15;
+            user.Rating += 3;
             await _context.SaveChangesAsync();
             return Ok(newFile);
         }
@@ -328,13 +369,24 @@ namespace GcmsSoc.API.Controllers
             if (file == null) return NotFound();
 
             file.Downloads++;
+
+            var user = await GetAuthenticatedUserAsync();
+            if (user != null)
+            {
+                user.Coins += 1;
+            }
+
             await _context.SaveChangesAsync();
             return Ok(file);
         }
 
         [HttpPost("files/{id}/comment")]
+        [Authorize]
         public async Task<IActionResult> AddFileComment(string id, [FromBody] CommentRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var file = await _context.Files.FindAsync(id);
             if (file == null) return NotFound();
 
@@ -342,8 +394,8 @@ namespace GcmsSoc.API.Controllers
             {
                 Id = Guid.NewGuid().ToString(),
                 FileItemId = id,
-                Username = request.Username,
-                Avatar = request.Avatar,
+                Username = user.Username,
+                Avatar = user.Avatar,
                 Text = request.Text,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm")
             };
@@ -364,25 +416,35 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("diaries")]
+        [Authorize]
         public async Task<IActionResult> AddDiary([FromBody] DiaryRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var newDiary = new Diary
             {
                 Id = Guid.NewGuid().ToString(),
                 Title = request.Title,
                 Content = request.Content,
-                Author = request.Author,
+                Author = user.Username,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm")
             };
 
             _context.Diaries.Add(newDiary);
+            user.Coins += 15;
+            user.Rating += 3;
             await _context.SaveChangesAsync();
             return Ok(newDiary);
         }
 
         [HttpPost("diaries/{id}/comment")]
+        [Authorize]
         public async Task<IActionResult> AddDiaryComment(string id, [FromBody] CommentRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var diary = await _context.Diaries.FindAsync(id);
             if (diary == null) return NotFound();
 
@@ -390,8 +452,8 @@ namespace GcmsSoc.API.Controllers
             {
                 Id = Guid.NewGuid().ToString(),
                 DiaryId = id,
-                Username = request.Username,
-                Avatar = request.Avatar,
+                Username = user.Username,
+                Avatar = user.Avatar,
                 Text = request.Text,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm")
             };
@@ -412,14 +474,18 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("photos")]
+        [Authorize]
         public async Task<IActionResult> AddPhoto([FromBody] PhotoRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var newPhoto = new PhotoItem
             {
                 Id = Guid.NewGuid().ToString(),
                 Url = request.Url,
                 Caption = request.Caption,
-                Author = request.Author,
+                Author = user.Username,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd")
             };
 
@@ -429,14 +495,18 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("photos/{id}/like")]
+        [Authorize]
         public async Task<IActionResult> LikePhoto(string id, [FromBody] LikeRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var photo = await _context.Photos
                 .Include(p => p.Likes)
                 .FirstOrDefaultAsync(p => p.Id == id);
             if (photo == null) return NotFound();
 
-            var existingLike = photo.Likes.FirstOrDefault(l => l.Username == request.Username);
+            var existingLike = photo.Likes.FirstOrDefault(l => l.Username == user.Username);
             if (existingLike != null)
             {
                 _context.PhotoLikes.Remove(existingLike);
@@ -447,7 +517,7 @@ namespace GcmsSoc.API.Controllers
                 {
                     Id = Guid.NewGuid().ToString(),
                     PhotoItemId = id,
-                    Username = request.Username
+                    Username = user.Username
                 };
                 _context.PhotoLikes.Add(newLike);
             }
@@ -457,8 +527,12 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("photos/{id}/comment")]
+        [Authorize]
         public async Task<IActionResult> AddPhotoComment(string id, [FromBody] CommentRequest request)
         {
+            var user = await GetAuthenticatedUserAsync();
+            if (user == null) return Unauthorized();
+
             var photo = await _context.Photos.FindAsync(id);
             if (photo == null) return NotFound();
 
@@ -466,8 +540,8 @@ namespace GcmsSoc.API.Controllers
             {
                 Id = Guid.NewGuid().ToString(),
                 PhotoItemId = id,
-                Username = request.Username,
-                Avatar = request.Avatar,
+                Username = user.Username,
+                Avatar = user.Avatar,
                 Text = request.Text,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm")
             };

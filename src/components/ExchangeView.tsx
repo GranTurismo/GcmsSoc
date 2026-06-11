@@ -75,7 +75,7 @@ export const ExchangeHomeView: React.FC = () => {
 
 export const ExchangeCatView: React.FC = () => {
   const { files, uploadFile } = useDB();
-  const { currentUser, addCoins, addRating } = useAuth();
+  const { currentUser } = useAuth();
   const { params, navigate, goBack } = useNav();
   
   const [fileName, setFileName] = useState('');
@@ -129,8 +129,6 @@ export const ExchangeCatView: React.FC = () => {
       currentUser.username,
       screenshotUrl.trim() || undefined
     );
-    addCoins(15);
-    addRating(3);
     setFileName('');
     setFileSize('');
     setFileDesc('');
@@ -311,7 +309,7 @@ export const ExchangeCatView: React.FC = () => {
 
 export const ExchangeFileView: React.FC = () => {
   const { files, downloadFile, addFileComment } = useDB();
-  const { currentUser, addCoins } = useAuth();
+  const { currentUser } = useAuth();
   const { params, goBack } = useNav();
   
   const [commentText, setCommentText] = useState('');
@@ -341,9 +339,6 @@ export const ExchangeFileView: React.FC = () => {
   const handleDownload = () => {
     downloadFile(file.id);
     setDownloadSuccess(true);
-    if (currentUser) {
-      addCoins(1);
-    }
     setTimeout(() => {
       setDownloadSuccess(false);
     }, 4500);

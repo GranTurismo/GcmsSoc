@@ -26,10 +26,10 @@ interface AuthContextType {
   updateStatus: (status: string) => void;
   updateAvatar: (avatarUrl: string) => void;
   updateBio: (bio: string) => void;
-  addCoins: (amount: number) => void;
-  addRating: (amount: number) => void;
+  giveGift: (recipientId: string) => Promise<boolean>;
   unreadMailCount: number;
   clearUnreadMail: () => void;
+  fetchUsers: () => Promise<void>;
 }
 
 const API_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
@@ -77,6 +77,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser]);
 
+  // Keep current user in sync with allUsers updates
+  useEffect(() => {
+    if (currentUser) {
+      const freshUser = allUsers.find(u => u.id === currentUser.id);
+      if (freshUser && (
+        freshUser.coins !== currentUser.coins || 
+        freshUser.rating !== currentUser.rating || 
+        freshUser.bio !== currentUser.bio || 
+        freshUser.status !== currentUser.status || 
+        freshUser.avatar !== currentUser.avatar
+      )) {
+        setCurrentUser(freshUser);
+      }
+    }
+  }, [allUsers, currentUser]);
+
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
@@ -85,8 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ username, password })
       });
       if (res.ok) {
-        const user = await res.json();
-        setCurrentUser(user);
+        const data = await res.json();
+        localStorage.setItem('dcms_auth_token', data.token);
+        setCurrentUser(data.user);
         await fetchUsers();
         return true;
       }
@@ -104,8 +121,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ username, password, sex, age, city })
       });
       if (res.ok) {
-        const newUser = await res.json();
-        setCurrentUser(newUser);
+        const data = await res.json();
+        localStorage.setItem('dcms_auth_token', data.token);
+        setCurrentUser(data.user);
         await fetchUsers();
         return true;
       }
@@ -118,10 +136,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     if (currentUser) {
       try {
-        await fetch(`${API_URL}/auth/logout/${currentUser.id}`, { method: 'POST' });
+        const token = localStorage.getItem('dcms_auth_token');
+        await fetch(`${API_URL}/auth/logout/${currentUser.id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
       } catch (err) {
         console.error('Logout error:', err);
       }
+      localStorage.removeItem('dcms_auth_token');
       setCurrentUser(null);
       await fetchUsers();
     }
@@ -130,9 +155,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateStatus = async (status: string) => {
     if (!currentUser) return;
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/auth/status/${currentUser.id}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ status })
       });
       if (res.ok) {
@@ -147,9 +176,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateAvatar = async (avatarUrl: string) => {
     if (!currentUser) return;
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/auth/avatar/${currentUser.id}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ avatarUrl })
       });
       if (res.ok) {
@@ -164,9 +197,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateBio = async (bio: string) => {
     if (!currentUser) return;
     try {
+      const token = localStorage.getItem('dcms_auth_token');
       const res = await fetch(`${API_URL}/auth/bio/${currentUser.id}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ bio })
       });
       if (res.ok) {
@@ -178,38 +215,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const addCoins = async (amount: number) => {
-    if (!currentUser) return;
+  const giveGift = async (recipientId: string): Promise<boolean> => {
+    if (!currentUser) return false;
     try {
-      const res = await fetch(`${API_URL}/auth/coins/${currentUser.id}`, {
+      const token = localStorage.getItem('dcms_auth_token');
+      const res = await fetch(`${API_URL}/auth/gift/${recipientId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
       if (res.ok) {
-        const updatedUser = await res.json();
-        setCurrentUser(updatedUser);
+        const updatedSender = await res.json();
+        setCurrentUser(updatedSender);
+        await fetchUsers();
+        return true;
       }
     } catch (err) {
-      console.error('Error updating coins:', err);
+      console.error('Error giving gift:', err);
     }
-  };
-
-  const addRating = async (amount: number) => {
-    if (!currentUser) return;
-    try {
-      const res = await fetch(`${API_URL}/auth/rating/${currentUser.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount })
-      });
-      if (res.ok) {
-        const updatedUser = await res.json();
-        setCurrentUser(updatedUser);
-      }
-    } catch (err) {
-      console.error('Error updating rating:', err);
-    }
+    return false;
   };
 
   const clearUnreadMail = () => {
@@ -226,10 +252,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateStatus,
       updateAvatar,
       updateBio,
-      addCoins,
-      addRating,
+      giveGift,
       unreadMailCount,
-      clearUnreadMail
+      clearUnreadMail,
+      fetchUsers
     }}>
       {children}
     </AuthContext.Provider>

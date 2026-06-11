@@ -9,7 +9,7 @@ import {
 
 export const DiariesListView: React.FC = () => {
   const { diaries, addDiary } = useDB();
-  const { currentUser, addCoins, addRating } = useAuth();
+  const { currentUser } = useAuth();
   const { navigate } = useNav();
   
   const [title, setTitle] = useState('');
@@ -26,8 +26,6 @@ export const DiariesListView: React.FC = () => {
     if (!currentUser) return;
 
     addDiary(title.trim(), content.trim(), currentUser.username);
-    addCoins(15);
-    addRating(3);
     setTitle('');
     setContent('');
     setShowForm(false);

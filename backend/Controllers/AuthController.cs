@@ -1,5 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
 using GcmsSoc.API.Data;
 using GcmsSoc.API.Models;
 
@@ -10,10 +15,33 @@ namespace GcmsSoc.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IConfiguration _config;
 
-        public AuthController(AppDbContext context)
+        public AuthController(AppDbContext context, IConfiguration config)
         {
             _context = context;
+            _config = config;
+        }
+
+        private string GenerateJwtToken(User user)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]!);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Role, user.Role)
+                }),
+                Expires = DateTime.UtcNow.AddDays(7),
+                Issuer = _config["Jwt:Issuer"],
+                Audience = _config["Jwt:Audience"],
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
 
         private static string HashPassword(string password)
@@ -66,7 +94,8 @@ namespace GcmsSoc.API.Controllers
             user.CurrentAction = "შემოვიდა პორტალზე";
             await _context.SaveChangesAsync();
 
-            return Ok(user);
+            var token = GenerateJwtToken(user);
+            return Ok(new { token, user });
         }
 
         [HttpPost("register")]
@@ -104,12 +133,17 @@ namespace GcmsSoc.API.Controllers
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
 
-            return Ok(newUser);
+            var token = GenerateJwtToken(newUser);
+            return Ok(new { token, user = newUser });
         }
 
         [HttpPost("logout/{userId}")]
+        [Authorize]
         public async Task<IActionResult> Logout(string userId)
         {
+            var authenticatedUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (authenticatedUserId != userId) return Forbid();
+
             var user = await _context.Users.FindAsync(userId);
             if (user != null)
             {
@@ -121,8 +155,12 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("status/{userId}")]
+        [Authorize]
         public async Task<IActionResult> UpdateStatus(string userId, [FromBody] StatusRequest request)
         {
+            var authenticatedUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (authenticatedUserId != userId) return Forbid();
+
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return NotFound();
 
@@ -132,8 +170,12 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("avatar/{userId}")]
+        [Authorize]
         public async Task<IActionResult> UpdateAvatar(string userId, [FromBody] AvatarRequest request)
         {
+            var authenticatedUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (authenticatedUserId != userId) return Forbid();
+
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return NotFound();
 
@@ -143,8 +185,12 @@ namespace GcmsSoc.API.Controllers
         }
 
         [HttpPost("bio/{userId}")]
+        [Authorize]
         public async Task<IActionResult> UpdateBio(string userId, [FromBody] BioRequest request)
         {
+            var authenticatedUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (authenticatedUserId != userId) return Forbid();
+
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return NotFound();
 
@@ -153,26 +199,32 @@ namespace GcmsSoc.API.Controllers
             return Ok(user);
         }
 
-        [HttpPost("coins/{userId}")]
-        public async Task<IActionResult> AddCoins(string userId, [FromBody] CoinsRequest request)
+        [HttpPost("gift/{recipientId}")]
+        [Authorize]
+        public async Task<IActionResult> GiveGift(string recipientId)
         {
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return NotFound();
+            var senderId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(senderId)) return Unauthorized();
 
-            user.Coins += request.Amount;
+            if (senderId == recipientId) return BadRequest("თქვენს თავს საჩუქარს ვერ გაუგზავნით!");
+
+            var sender = await _context.Users.FindAsync(senderId);
+            var recipient = await _context.Users.FindAsync(recipientId);
+
+            if (sender == null || recipient == null) return NotFound();
+
+            if (sender.Coins < 10)
+            {
+                return BadRequest("საჩუქრის გასაგზავნად გჭირდებათ მინიმუმ 10 მონეტა!");
+            }
+
+            sender.Coins -= 10;
+            recipient.Coins += 10;
+            recipient.Rating += 1;
+
             await _context.SaveChangesAsync();
-            return Ok(user);
-        }
 
-        [HttpPost("rating/{userId}")]
-        public async Task<IActionResult> AddRating(string userId, [FromBody] RatingRequest request)
-        {
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return NotFound();
-
-            user.Rating += request.Amount;
-            await _context.SaveChangesAsync();
-            return Ok(user);
+            return Ok(sender);
         }
     }
 }

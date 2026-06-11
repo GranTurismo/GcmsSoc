@@ -49,7 +49,7 @@ export const ForumHomeView: React.FC = () => {
 
 export const ForumCatView: React.FC = () => {
   const { forumCategories, addForumTopic } = useDB();
-  const { currentUser, addCoins, addRating } = useAuth();
+  const { currentUser } = useAuth();
   const { params, navigate, goBack } = useNav();
   
   const [topicTitle, setTopicTitle] = useState('');
@@ -83,8 +83,6 @@ export const ForumCatView: React.FC = () => {
     if (!currentUser) return;
 
     addForumTopic(category.id, topicTitle.trim(), currentUser.username, currentUser.avatar, topicText.trim());
-    addCoins(10);
-    addRating(2);
     setTopicTitle('');
     setTopicText('');
     setShowForm(false);
@@ -184,7 +182,7 @@ export const ForumCatView: React.FC = () => {
 
 export const ForumTopicView: React.FC = () => {
   const { forumCategories, addForumPost, likeForumPost, incrementTopicViews } = useDB();
-  const { currentUser, addCoins, addRating } = useAuth();
+  const { currentUser } = useAuth();
   const { params, goBack } = useNav();
   
   const [replyText, setReplyText] = useState('');
@@ -221,8 +219,6 @@ export const ForumTopicView: React.FC = () => {
     if (!replyText.trim() || !currentUser) return;
 
     addForumPost(category.id, topic.id, currentUser.username, currentUser.avatar, replyText.trim());
-    addCoins(3);
-    addRating(1);
     setReplyText('');
     setShowEmoji(false);
   };

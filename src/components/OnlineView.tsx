@@ -73,7 +73,7 @@ export const OnlineUsersListView: React.FC = () => {
 export const ProfileView: React.FC = () => {
   const { 
     currentUser, allUsers, updateStatus, updateAvatar, 
-    updateBio, addCoins 
+    updateBio, giveGift 
   } = useAuth();
   
   const { params, navigate, goBack } = useNav();
@@ -121,7 +121,7 @@ export const ProfileView: React.FC = () => {
     setEditMode(false);
   };
 
-  const handleGiveGift = () => {
+  const handleGiveGift = async () => {
     if (!currentUser) {
       navigate('login');
       return;
@@ -132,12 +132,14 @@ export const ProfileView: React.FC = () => {
       return;
     }
 
-    addCoins(-10);
-    user.coins += 10;
-    user.rating += 1;
-    
-    setGiftSuccess(true);
-    setTimeout(() => setGiftSuccess(false), 3000);
+    const success = await giveGift(user.id);
+    if (success) {
+      setGiftSuccess(true);
+      setTimeout(() => setGiftSuccess(false), 3000);
+    } else {
+      setGiftError('საჩუქრის გაგზავნა ვერ მოხერხდა.');
+      setTimeout(() => setGiftError(''), 3000);
+    }
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
