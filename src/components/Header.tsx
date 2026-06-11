@@ -97,6 +97,16 @@ export const Header: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4 flex-wrap text-sm">
+            {currentUser.role === 'admin' && (
+              <span 
+                className="flex items-center gap-1.5 text-red-400 hover:text-red-300 cursor-pointer transition-colors font-bold animate-pulse" 
+                onClick={() => navigate('admin_panel')}
+              >
+                <Shield size={15} />
+                <span>ადმინ. პანელი</span>
+              </span>
+            )}
+
             <span 
               className="flex items-center gap-1.5 text-violet-300 hover:text-violet-100 cursor-pointer transition-colors" 
               onClick={() => navigate('profile', { userId: currentUser.id })}

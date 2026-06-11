@@ -17,6 +17,7 @@ import { DatingView } from './components/DatingView';
 import { LeadersView } from './components/LeadersView';
 import { OnlineUsersListView, ProfileView } from './components/OnlineView';
 import { LibraryListView, LibraryDetailView } from './components/LibraryView';
+import { AdminPanelView } from './components/AdminPanelView';
 
 // Home Specific Icons
 import { 
@@ -122,6 +123,8 @@ const AppContent: React.FC = () => {
         return <LibraryListView />;
       case 'library_detail':
         return <LibraryDetailView />;
+      case 'admin_panel':
+        return <AdminPanelView />;
       case 'login':
         return <LoginView />;
       case 'register':
