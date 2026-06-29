@@ -158,7 +158,7 @@ export const Header: React.FC = () => {
               onClick={() => navigate('register')}
             >
               <UserPlus size={12} />
-              <span>რეგისტრაცია</span>
+              <span>რეგისტრndjdhhdაცია</span>
             </button>
           </div>
         </div>
