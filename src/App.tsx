@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 
 const MENU_ITEMS = [
-  { page: 'forum_home', title: 'ფორუმი', desc: 'დისკუსიები ტექნოლოგიებზე, თამაშებზე და სხვა თემებზე', icon: <MessageSquare size={18} /> },
+  { page: 'forum_home', title: 'ფორუმ1111ი', desc: 'დისკუსიები ტექნოლოგიებზე, თამაშებზე და სხვა თემებზე', icon: <MessageSquare size={18} /> },
   { page: 'chat_home', title: 'ჩეთი და სტუმრები', desc: 'ცოცხალი მიმოწერა, ოთახები და სტუმრების წიგნი', icon: <Sparkles size={18} /> },
   { page: 'exchange_home', title: 'ფაილების გაცვლა', desc: 'თამაშები, მუსიკა, სურათები და სასარგებლო ფაილები', icon: <Download size={18} /> },
   { page: 'diaries', title: 'დღიურები', desc: 'მომხმარებელთა პირადი ჩანაწერები და დღიურები', icon: <FileText size={18} /> },
